@@ -22,6 +22,10 @@ class GeneratorDelegateTest extends \BlacksmithTest
 
     private $optionReader;
 
+    private $genFactory;
+
+    private $filesystem;
+
     public function setUp()
     {
         parent::setUp();
@@ -52,8 +56,30 @@ class GeneratorDelegateTest extends \BlacksmithTest
         $this->config->shouldReceive('validateConfig')->once()
             ->andReturn(false);
 
+
         $this->command->shouldReceive('comment')->once()
             ->with('Error', 'The loaded configuration file is invalid', true);
+
+        $optionReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperDatabase', 'useFieldMapperModel']
+        );
+
+        $optionReader->expects($this->any())
+            ->method('useFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $optionReader->expects($this->any())
+            ->method('useFieldMapperModel')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $this->optionReader->shouldReceive('useFieldMapperDatabase')->once()
+            ->andReturn(true);
+
+        $this->optionReader->shouldReceive('useFieldMapperModel')->once()
+            ->andReturn(true);
 
         $delegate = new GeneratorDelegate(
             $this->command,

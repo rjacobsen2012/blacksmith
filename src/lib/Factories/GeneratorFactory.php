@@ -16,7 +16,7 @@ class GeneratorFactory
      * @param  string           $what the desired generator
      * @param  array            $options command line parameter options
      * @param  ReflectionClass  $reflectionClass used for finding out info about class to gen
-     * @return Generators\GeneratorInterface
+     * @return \Generators\GeneratorInterface
      */
     public function make($what, OptionReader $optionReader, $reflectionClass = null)
     {

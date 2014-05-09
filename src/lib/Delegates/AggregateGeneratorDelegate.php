@@ -67,6 +67,9 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
      */
     protected $filesystem;
 
+    /** @var \Mapper */
+    protected $mapper = null;
+
     /**
      * Constructor to setup up our class variables
      * 
@@ -113,6 +116,26 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
             return false;
         }
 
+        //check is the field mapper database is set and is valid
+        if (! $this->isFieldMapperDatabaseValid()) {
+            $this->command->comment(
+                'Error',
+                $this->config->getError(),
+                true
+            );
+            return false;
+        }
+
+        //check is the field mapper model is set and is valid
+        if (! $this->isFieldMapperModelValid()) {
+            $this->command->comment(
+                'Error',
+                $this->config->getError(),
+                true
+            );
+            return false;
+        }
+
         //get possible generations
         $possible_aggregates = $this->config->getAvailableAggregates();
 
@@ -153,6 +176,7 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
             $filename  = $settings[ConfigReader::CONFIG_VAL_FILENAME];
 
             //create the generator
+            /** @var \Generators\GeneratorInterface $generator */
             $generator = $this->generator_factory->make($to_generate, $this->optionReader);
 
             //run generator
@@ -161,7 +185,7 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
                 $template,
                 $directory,
                 $filename,
-                $this->optionReader
+                $this->mapper
             );
 
             if ($success) {
@@ -189,7 +213,68 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
         
     }//end run function
 
+    /**
+     * Calls the options validator
+     *
+     * @return bool
+     */
+    public function isOptionsValid()
+    {
+        if (! $this->optionReader->validateOptions()) {
+            $this->command->comment(
+                'Error',
+                $this->optionReader->getError(),
+                true
+            );
+            return false;
+        }
 
+        return true;
+    }
+
+    public function isFieldMapperDatabaseValid()
+    {
+        if ($this->optionReader->useFieldMapperDatabase()) {
+            $this->config->useFieldMapperDatabase(true);
+            $mapper = $this->config->validateFieldMapperDatabase();
+
+            if (! $mapper) {
+                $this->command->comment(
+                    'Error',
+                    $this->config->getError(),
+                    true
+                );
+                return false;
+            } else {
+                $this->mapper = $mapper;
+            }
+        }
+
+        return true;
+    }
+
+    public function isFieldMapperModelValid()
+    {
+        $model = $this->optionReader->useFieldMapperModel();
+
+        if ($model) {
+
+            $mapper = $this->config->validateFieldMapperModel($model);
+
+            if (! $mapper) {
+                $this->command->comment(
+                    'Error',
+                    $this->config->getError(),
+                    true
+                );
+                return false;
+            } else {
+                $this->mapper = $mapper;
+            }
+        }
+
+        return true;
+    }
 
     /**
      * Function to handle updating the routes file

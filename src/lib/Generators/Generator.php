@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use Illuminate\Filesystem\Filesystem;
 use Parsers\FieldParser;
 use Mustache_Engine;
+use Parsers\FieldsGenerator;
 
 /**
  * Class to handle the generation of files from
@@ -17,7 +18,7 @@ class Generator implements GeneratorInterface
      * Filesystem object used to write
      * oute files / make dirs
      * 
-     * @var Illuminate\Filesystem\Filesystem
+     * @var \Illuminate\Filesystem\Filesystem
      */
     protected $filesystem;
 
@@ -33,7 +34,7 @@ class Generator implements GeneratorInterface
      * Field parser for parsing 
      * field level entity data
      * 
-     * @var Parsers\FieldParser
+     * @var \Parsers\FieldParser
      */
     protected $fieldParser;
 
@@ -109,7 +110,7 @@ class Generator implements GeneratorInterface
      * @param  string $fieldData      data about specific fields of the entity
      * @return bool
      */
-    public function make($entity, $sourceTemplate, $destinationDir, $fileName = null)
+    public function make($entity, $sourceTemplate, $destinationDir, $fileName = null, \Mapper $mapper = null)
     {
         //set the entity we're creating for
         //later template parsing operations
@@ -119,6 +120,17 @@ class Generator implements GeneratorInterface
         $fieldData = $this->optionReader->getFields();
         if ($fieldData) {
             $this->fieldData = $this->fieldParser->parse($fieldData);
+        } elseif ($mapper) {
+            $model = $this->optionReader->getModel();
+            if (! $model) {
+                $model = $entity;
+            }
+
+            $this->fieldData = $this->fieldParser->parse(
+                FieldsGenerator::getFields(
+                    $mapper->getFields($model)
+                )
+            );
         }
 
         //set local var for template vars used for subsequent calls

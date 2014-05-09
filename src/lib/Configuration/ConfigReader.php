@@ -2,6 +2,7 @@
 
 use Illuminate\Filesystem\FileNotFoundException;
 use Illuminate\Filesystem\Filesystem;
+use SebastianBergmann\Exporter\Exception;
 
 /**
  * Class for reading files and values from Blacksmith
@@ -32,6 +33,16 @@ class ConfigReader implements ConfigReaderInterface
      * @var string
      */
     protected $configDir;
+
+    protected $useFieldMapperDatabase = false;
+
+    /** @var \Configuration\DatabaseConfig */
+    protected $databaseConfigReader;
+
+    /** @var \Mapper */
+    protected $mapper;
+
+    protected $error;
 
     /**
      * Constants for configuration keys that
@@ -200,6 +211,125 @@ class ConfigReader implements ConfigReaderInterface
         return true;
     }
 
+    public function setDatabaseConfigReader(DatabaseConfig $databaseConfig)
+    {
+
+        $this->databaseConfigReader = $databaseConfig;
+
+    }
+
+    public function getDatabaseConfigReader()
+    {
+
+        return $this->databaseConfigReader;
+
+    }
+
+    public function setFieldMapper(\Mapper $mapper)
+    {
+
+        $this->mapper = $mapper;
+
+    }
+
+    public function getFieldMapper()
+    {
+
+        return $this->mapper;
+
+    }
+
+    public function useFieldMapperDatabase($use)
+    {
+        $this->useFieldMapperDatabase = $use;
+    }
+
+    public function validateFieldMapperDatabase()
+    {
+
+        if ($this->useFieldMapperDatabase) {
+            if (! array_key_exists('database', $this->config)) {
+                $this->error = "Database config is missing from the config file.";
+                return false;
+            }
+
+            $this->setDatabaseConfigReader(new DatabaseConfig($this->config['database']));
+            $this->setFieldMapper(new \Mapper());
+
+            $this->mapper->setDbConfig(
+                $this->databaseConfigReader->getDatabaseType(),
+                $this->databaseConfigReader->getDatabaseHost(),
+                $this->databaseConfigReader->getDatabaseUser(),
+                $this->databaseConfigReader->getDatabasePassword(),
+                $this->databaseConfigReader->getDatabaseName(),
+                $this->databaseConfigReader->getDatabasePort(),
+                $this->databaseConfigReader->getDatabaseSocket()
+            );
+
+            if (! $this->mapper->validateDbConnection()) {
+                $this->error = "The field mapper cannot connect to the database.";
+                return false;
+            } else {
+                return $this->mapper;
+            }
+
+        }
+
+        return true;
+
+    }
+
+    public function findAutoLoader($path)
+    {
+
+        $newpath = dirname($path);
+
+        if (! is_dir("$newpath/vendor")) {
+            return $this->findAutoLoader($newpath);
+        }
+
+        return $newpath;
+
+    }
+
+    public function loadAutoloader($autoloader)
+    {
+
+        try {
+            require_once($autoloader);
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to load the autoloader [{$autoloader}]");
+        }
+
+    }
+
+    public function validateFieldMapperModel($model)
+    {
+
+        if ($model) {
+
+            $this->setFieldMapper(new \Mapper());
+
+            $autoloader = $this->findAutoLoader($model);
+            $this->loadAutoloader("$autoloader/vendor/autoload.php");
+
+            if (!$this->mapper->validateModel($model)) {
+
+                $this->error = "The model for the field mapper could not be loaded.";
+
+                return false;
+
+            } else {
+
+                return $this->mapper;
+
+            }
+
+        }
+
+        return true;
+
+    }
 
     /**
      * Function to return an array of possible
@@ -284,4 +414,10 @@ class ConfigReader implements ConfigReaderInterface
     {
         return $this->configDir;
     }
+
+    public function getError()
+    {
+        return $this->error;
+    }
+
 }

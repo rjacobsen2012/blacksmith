@@ -7,9 +7,9 @@ use Parsers\FieldParser;
 class Seed extends Generator implements GeneratorInterface
 {
 
-    public function make($entity, $sourceTemplate, $destinationDir, $fileName = null, $fieldData = null)
+    public function make($entity, $sourceTemplate, $destinationDir, $fileName = null, \Mapper $mapper = null)
     {
-        $result = parent::make($entity, $sourceTemplate, $destinationDir, $fileName, $fieldData);
+        $result = parent::make($entity, $sourceTemplate, $destinationDir, $fileName, $mapper);
 
         if (!$result) {
             return false;

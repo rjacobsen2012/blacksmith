@@ -18,21 +18,21 @@ class GeneratorDelegate implements GeneratorDelegateInterface
     /**
      * Command that delegated the request
      * 
-     * @var Console\GenerateCommand
+     * @var \Console\GenerateCommand
      */
     protected $command;
 
     /**
      * Configuration of generation
      * 
-     * @var Configuration\ConfigReader
+     * @var \Configuration\ConfigReader
      */
     protected $config;
 
     /**
      * Generator to perform the code generation
      * 
-     * @var Generators\Generator
+     * @var \Generators\Generator
      */
     protected $generator;
 
@@ -64,6 +64,9 @@ class GeneratorDelegate implements GeneratorDelegateInterface
      * @var Filesystem
      */
     protected $filesystem;
+
+    /** @var \Mapper */
+    protected $mapper = null;
 
 
     /**
@@ -106,6 +109,26 @@ class GeneratorDelegate implements GeneratorDelegateInterface
             return false;
         }
 
+        //check is the field mapper database is set and is valid
+        if (! $this->isFieldMapperDatabaseValid()) {
+            $this->command->comment(
+                'Error',
+                $this->config->getError(),
+                true
+            );
+            return false;
+        }
+
+        //check is the field mapper model is set and is valid
+        if (! $this->isFieldMapperModelValid()) {
+            $this->command->comment(
+                'Error',
+                $this->config->getError(),
+                true
+            );
+            return false;
+        }
+
         //get possible generations
         $possible_generations = $this->config->getAvailableGenerators(
             $this->config->getConfigType()
@@ -141,7 +164,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
             $template,
             $directory,
             $filename,
-            $this->optionReader
+            $this->mapper
         );
 
         if ($success) {
@@ -161,5 +184,65 @@ class GeneratorDelegate implements GeneratorDelegateInterface
             );
             return false;
         }
+    }
+
+    /**
+     * Calls the options validator
+     *
+     * @return bool
+     */
+    public function isOptionsValid()
+    {
+        if (! $this->optionReader->validateOptions()) {
+            $this->command->comment(
+                'Error',
+                $this->optionReader->getError(),
+                true
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    public function isFieldMapperDatabaseValid()
+    {
+        if ($this->optionReader->useFieldMapperDatabase()) {
+            $mapper = $this->config->validateFieldMapperDatabase();
+
+            if (! $mapper) {
+                $this->command->comment(
+                    'Error',
+                    $this->config->getError(),
+                    true
+                );
+                return false;
+            } else {
+                $this->mapper = $mapper;
+            }
+        }
+
+        return true;
+    }
+
+    public function isFieldMapperModelValid()
+    {
+        $model = $this->optionReader->useFieldMapperModel();
+        if ($model) {
+            $mapper = $this->config->validateFieldMapperModel($model);
+
+            if (! $mapper) {
+                $this->command->comment(
+                    'Error',
+                    $this->config->getError(),
+                    true
+                );
+                return false;
+            } else {
+                $this->mapper = $mapper;
+            }
+        }
+
+        return true;
     }
 }
