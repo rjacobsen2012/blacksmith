@@ -60,21 +60,6 @@ class GeneratorDelegateTest extends \BlacksmithTest
         $this->command->shouldReceive('comment')->once()
             ->with('Error', 'The loaded configuration file is invalid', true);
 
-        $optionReader = $this->getMock(
-            'Console\OptionReader',
-            ['useFieldMapperDatabase', 'useFieldMapperModel']
-        );
-
-        $optionReader->expects($this->any())
-            ->method('useFieldMapperDatabase')
-            ->withAnyParameters()
-            ->willReturn(true);
-
-        $optionReader->expects($this->any())
-            ->method('useFieldMapperModel')
-            ->withAnyParameters()
-            ->willReturn(true);
-
         $this->optionReader->shouldReceive('useFieldMapperDatabase')->once()
             ->andReturn(true);
 
