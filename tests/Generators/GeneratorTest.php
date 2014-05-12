@@ -90,7 +90,7 @@ class GeneratorTest extends \BlacksmithTest
             ->with($outfile)->andReturn(true);
 
         //test making a file that exists, should return false
-        $this->assertFalse($generator->make('order', $template, $destination, null, 'name:string'));
+        $this->assertFalse($generator->make('order', $template, $destination, null, null));
 
         //assert that the field data was parsed
         $this->assertEquals(

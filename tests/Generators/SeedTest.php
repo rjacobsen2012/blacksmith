@@ -50,7 +50,7 @@ class SeedTest extends \BlacksmithTest
             $sourceTemplate,
             $destinationDir,
             $fileName,
-            $or
+            null
         );
         $this->assertTrue($result);
 
@@ -65,7 +65,7 @@ class SeedTest extends \BlacksmithTest
             $sourceTemplate,
             $destinationDir,
             $fileName,
-            $or
+            null
         );
         $this->assertFalse($result);
 
@@ -76,7 +76,7 @@ class SeedTest extends \BlacksmithTest
             $sourceTemplate,
             $destinationDir,
             $fileName,
-            $or
+            null
         );
         $this->assertTrue($result);
     }

@@ -60,12 +60,6 @@ class GeneratorDelegateTest extends \BlacksmithTest
         $this->command->shouldReceive('comment')->once()
             ->with('Error', 'The loaded configuration file is invalid', true);
 
-        $this->optionReader->shouldReceive('useFieldMapperDatabase')->once()
-            ->andReturn(true);
-
-        $this->optionReader->shouldReceive('useFieldMapperModel')->once()
-            ->andReturn(true);
-
         $delegate = new GeneratorDelegate(
             $this->command,
             $this->config,
@@ -97,6 +91,12 @@ class GeneratorDelegateTest extends \BlacksmithTest
             ->andReturn($options);
 
         $this->config->shouldReceive('getConfigType')->once();
+
+        $this->optionReader->shouldReceive('useFieldMapperDatabase')->once()
+            ->andReturn(false);
+
+        $this->optionReader->shouldReceive('useFieldMapperModel')->once()
+            ->andReturn(null);
 
 
         $this->command->shouldReceive('comment')->once()
@@ -132,6 +132,12 @@ class GeneratorDelegateTest extends \BlacksmithTest
 
         $this->config->shouldReceive('getConfigType')->once();
 
+        $this->optionReader->shouldReceive('useFieldMapperDatabase')->once()
+            ->andReturn(false);
+
+        $this->optionReader->shouldReceive('useFieldMapperModel')->once()
+            ->andReturn(null);
+
         $baseDir = '/path/to';
         $this->config->shouldReceive('getConfigDirectory')->once()
             ->andReturn($baseDir);
@@ -154,7 +160,7 @@ class GeneratorDelegateTest extends \BlacksmithTest
                 implode(DIRECTORY_SEPARATOR, [$baseDir, $settings[ConfigReader::CONFIG_VAL_TEMPLATE]]),
                 $settings[ConfigReader::CONFIG_VAL_DIRECTORY],
                 $settings[ConfigReader::CONFIG_VAL_FILENAME],
-                $this->optionReader
+                null
             )->andReturn(true);
 
         $dest = '/path/to/dir/Output.php';
@@ -195,6 +201,12 @@ class GeneratorDelegateTest extends \BlacksmithTest
         $this->config->shouldReceive('getConfigDirectory')->once()
             ->andReturn($baseDir);
 
+        $this->optionReader->shouldReceive('useFieldMapperDatabase')->once()
+            ->andReturn(false);
+
+        $this->optionReader->shouldReceive('useFieldMapperModel')->once()
+            ->andReturn(null);
+
         //settings to be returned by getConfigValue below
         $settings = [
             ConfigReader::CONFIG_VAL_TEMPLATE  => 'template.txt',
@@ -213,7 +225,7 @@ class GeneratorDelegateTest extends \BlacksmithTest
                 implode(DIRECTORY_SEPARATOR, [$baseDir, $settings[ConfigReader::CONFIG_VAL_TEMPLATE]]),
                 $settings[ConfigReader::CONFIG_VAL_DIRECTORY],
                 $settings[ConfigReader::CONFIG_VAL_FILENAME],
-                $this->optionReader
+                null
             )->andReturn(false);
 
         $this->command->shouldReceive('comment')->once()
