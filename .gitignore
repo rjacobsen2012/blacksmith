@@ -9,3 +9,4 @@ tests/meta
 /bin/validate-json
 .idea
 .DS_Store
+code-coverage

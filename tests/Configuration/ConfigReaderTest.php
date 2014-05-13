@@ -312,4 +312,393 @@ class ConfigReaderTest extends \BlacksmithTest
         $result = $reader->getAggregateValues('something-invalid');
         $this->assertFalse($result);
     }
+
+    public function testSetGetDatabaseConfigReader()
+    {
+        $databaseConfig = \Mockery::mock('Configuration\DatabaseConfig');
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $reader->setDatabaseConfigReader($databaseConfig);
+        $this->assertTrue($reader->getDatabaseConfigReader() instanceof $databaseConfig);
+    }
+
+    public function testSetGetFieldMapper()
+    {
+        $fieldMapper = \Mockery::mock('\Mapper');
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $reader->setFieldMapper($fieldMapper);
+        $this->assertTrue($reader->getFieldMapper() instanceof $fieldMapper);
+    }
+
+    public function testGetFieldMapperIfNotSet()
+    {
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $fieldMapper = $reader->getFieldMapper();
+        $this->assertTrue($fieldMapper instanceof $fieldMapper);
+    }
+
+    public function testSetGetUseFieldMapperDatabase()
+    {
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $reader->setUseFieldMapperDatabase(true);
+        $this->assertTrue($reader->useFieldMapperDatabase());
+    }
+
+    public function testValidateFieldMapperDatabasePasses()
+    {
+        $fieldMapper = $this->getMock(
+            '\Mapper',
+            ['setDbConfig', 'validateDbConnection']
+        );
+
+        $fieldMapper->expects($this->any())
+            ->method('setDbConfig')
+            ->withAnyParameters();
+
+        $fieldMapper->expects($this->any())
+            ->method('validateDbConnection')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $reader->setFieldMapper($fieldMapper);
+
+        $reader->setUseFieldMapperDatabase(true);
+
+        $valid = $reader->validateFieldMapperDatabase();
+
+        $this->assertTrue($valid instanceof \Mapper);
+
+    }
+
+    public function testValidateFieldMapperDatabase()
+    {
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $reader->setUseFieldMapperDatabase(false);
+
+        $valid = $reader->validateFieldMapperDatabase();
+
+        $this->assertTrue($valid);
+
+    }
+
+    public function testValidateFieldMapperDatabaseFails()
+    {
+        $fieldMapper = $this->getMock(
+            '\Mapper',
+            ['setDbConfig', 'validateDbConnection']
+        );
+
+        $fieldMapper->expects($this->any())
+            ->method('setDbConfig')
+            ->withAnyParameters();
+
+        $fieldMapper->expects($this->any())
+            ->method('validateDbConnection')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['useDatabaseConfig'],
+            [$fs]
+        );
+
+        $reader->expects($this->any())
+            ->method('useDatabaseConfig')
+            ->willReturn(false);
+
+        $reader->setFieldMapper($fieldMapper);
+
+        $reader->setUseFieldMapperDatabase(true);
+
+        $valid = $reader->validateFieldMapperDatabase();
+
+        $this->assertFalse($valid);
+
+    }
+
+    public function testValidateFieldMapperDatabaseFieldMapperFailsToConnect()
+    {
+        $fieldMapper = $this->getMock(
+            '\Mapper',
+            ['setDbConfig', 'validateDbConnection']
+        );
+
+        $fieldMapper->expects($this->any())
+            ->method('setDbConfig')
+            ->withAnyParameters();
+
+        $fieldMapper->expects($this->any())
+            ->method('validateDbConnection')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['useDatabaseConfig'],
+            [$fs]
+        );
+
+        $reader->expects($this->any())
+            ->method('useDatabaseConfig')
+            ->willReturn(true);
+
+        $reader->setFieldMapper($fieldMapper);
+
+        $reader->setUseFieldMapperDatabase(true);
+
+        $valid = $reader->validateFieldMapperDatabase();
+
+        $this->assertFalse($valid);
+
+    }
+
+    public function testFindAutoLoader()
+    {
+        $testpath = "/www/blacksmith/src/lib/Configuration";
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $actualPath = $reader->findAutoLoader($testpath);
+        $this->assertEquals("/www/blacksmith/src", $actualPath);
+
+    }
+
+    public function testLoadAutoloaderPasses()
+    {
+        $testpath = "/www/blacksmith/src/lib/Configuration";
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $actualPath = $reader->findAutoLoader($testpath);
+
+        $reader->loadAutoloader("$actualPath/vendor/autoload.php");
+    }
+
+    public function testLoadAutoloaderFails()
+    {
+        $testpath = "/www/blacksmith/src/lib/Configuration";
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $actualPath = $reader->findAutoLoader($testpath);
+
+        $e = null;
+
+        try {
+            $reader->loadAutoloader("$actualPath/autoload.php");
+        } catch (\Exception $e) {
+
+        }
+
+        $this->assertTrue($e instanceof \Exception);
+
+    }
+
+    public function testValidateFieldMapperModelPasses()
+    {
+        $fieldMapper = $this->getMock(
+            '\Mapper',
+            ['validateModel']
+        );
+
+        $fieldMapper->expects($this->any())
+            ->method('validateModel')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['loadAutoLoader'],
+            [$fs]
+        );
+
+        $reader->expects($this->any())
+            ->method('loadAutoLoader');
+
+        $reader->setFieldMapper($fieldMapper);
+
+        $valid = $reader->validateFieldMapperModel("/www/blacksmith/src/vendor/database/field-dresser/tests/fixtures/Company");
+
+        $this->assertTrue($valid instanceof \Mapper);
+
+    }
+
+    public function testValidateFieldMapperModelFails()
+    {
+        $fieldMapper = $this->getMock(
+            '\Mapper',
+            ['validateModel']
+        );
+
+        $fieldMapper->expects($this->any())
+            ->method('validateModel')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['loadAutoLoader'],
+            [$fs]
+        );
+
+        $reader->expects($this->any())
+            ->method('loadAutoLoader');
+
+        $reader->setFieldMapper($fieldMapper);
+
+        $valid = $reader->validateFieldMapperModel("/www/blacksmith/src/vendor/database/field-dresser/tests/fixtures/Company");
+
+        $this->assertFalse($valid);
+
+    }
+
+    public function testValidateFieldMapperModelPassesWithNoModel()
+    {
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $valid = $reader->validateFieldMapperModel(null);
+
+        $this->assertTrue($valid);
+
+    }
+
+    public function testSetGetError()
+    {
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $reader = new ConfigReader($fs);
+
+        $reader->setError("some error");
+        $error = $reader->getError();
+        $this->assertEquals("some error", $error);
+
+    }
+
 }

@@ -6,6 +6,15 @@
         "directory": "app/models",
         "filename": "{{Entity}}.php"
     },
+    "database": {
+        "type": "mysql",
+        "host": "123.22.121.1",
+        "user": "someuser",
+        "password": "some_password",
+        "database_name": "some_database_name",
+        "port": "1234",
+        "socket": "some_socket"
+    },
     "controller": {
         "template": "controller.txt",
         "directory": "app/controllers",

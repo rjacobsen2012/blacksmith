@@ -28,11 +28,13 @@ interface ConfigReaderInterface
 
     public function getDatabaseConfigReader();
 
-    public function setFieldMapper(\Mapper $mapper);
+    public function setFieldMapper($mapper);
 
     public function getFieldMapper();
 
-    public function useFieldMapperDatabase($use);
+    public function setUseFieldMapperDatabase($use);
+
+    public function useFieldMapperDatabase();
 
     public function validateFieldMapperDatabase();
 

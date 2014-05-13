@@ -60,14 +60,23 @@ class GeneratorDelegateTest extends \BlacksmithTest
         $this->command->shouldReceive('comment')->once()
             ->with('Error', 'The loaded configuration file is invalid', true);
 
-        $delegate = new GeneratorDelegate(
-            $this->command,
-            $this->config,
-            $this->genFactory,
-            $this->filesystem,
-            $this->args,
-            $this->optionReader
+        $delegate = $this->getMock(
+            'Delegates\GeneratorDelegate',
+            ['isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
         );
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
         $this->assertFalse($delegate->run());
     }
 
@@ -104,16 +113,24 @@ class GeneratorDelegateTest extends \BlacksmithTest
 
         $this->command->shouldReceive('comment')->once()
             ->with('Error Details', "Please choose from: ". implode(", ", $options), true);
-        
-        
-        $delegate = new GeneratorDelegate(
-            $this->command,
-            $this->config,
-            $this->genFactory,
-            $this->filesystem,
-            $this->args,
-            $this->optionReader
+
+        $delegate = $this->getMock(
+            'Delegates\GeneratorDelegate',
+            ['isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
         );
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
         $this->assertFalse($delegate->run());
     }
 
@@ -164,24 +181,32 @@ class GeneratorDelegateTest extends \BlacksmithTest
             )->andReturn(true);
 
         $dest = '/path/to/dir/Output.php';
+
         $this->generator->shouldReceive('getTemplateDestination')->once()
             ->andReturn($dest);
 
         $this->command->shouldReceive('comment')->once()
-            ->with('Blacksmith', "Success, I generated the code for you in {$dest}");
+            ->with('Blacksmith', "Success, I generated the code for you in {$dest}", false);
 
-        $delegate = new GeneratorDelegate(
-            $this->command,
-            $this->config,
-            $this->genFactory,
-            $this->filesystem,
-            $this->args,
-            $this->optionReader
+        $delegate = $this->getMock(
+            'Delegates\GeneratorDelegate',
+            ['isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
         );
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
         $this->assertTrue($delegate->run());
     }
-
-
 
     public function testRunWithValidArgumentsButGeneratorFailure()
     {
@@ -231,14 +256,606 @@ class GeneratorDelegateTest extends \BlacksmithTest
         $this->command->shouldReceive('comment')->once()
             ->with('Blacksmith', "An unknown error occured, nothing was generated", true);
 
+        $delegate = $this->getMock(
+            'Delegates\GeneratorDelegate',
+            ['isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
+        $this->assertFalse($delegate->run());
+    }
+
+    public function testRunWithValidArgumentsButGeneratorWithMapperDatabaseFailure()
+    {
+        //mock valid options
+        $options = ['model', 'controller'];
+
+        $this->config->shouldReceive('validateConfig')->once()
+            ->andReturn(true);
+
+        $this->config->shouldReceive('getError')->once()
+            ->withAnyArgs()
+            ->andReturn('some error');
+
+        $delegate = $this->getMock(
+            'Delegates\GeneratorDelegate',
+            ['isFieldMapperDatabaseValid', 'throwError', 'isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('isFieldMapperDatabaseValid')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $delegate->expects($this->any())
+            ->method('throwError')
+            ->withAnyParameters();
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
+        $this->assertFalse($delegate->run());
+    }
+
+    public function testRunWithValidArgumentsButGeneratorWithMapperModelFailure()
+    {
+        //mock valid options
+        $options = ['model', 'controller'];
+
+        $this->config->shouldReceive('validateConfig')->once()
+            ->andReturn(true);
+
+        $this->config->shouldReceive('getError')->once()
+            ->withAnyArgs()
+            ->andReturn('some error');
+
+        $this->optionReader->shouldReceive('useFieldMapperDatabase')->once()
+            ->andReturn(false);
+
+        $delegate = $this->getMock(
+            'Delegates\GeneratorDelegate',
+            ['isFieldMapperModelValid', 'throwError', 'isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('isFieldMapperModelValid')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $delegate->expects($this->any())
+            ->method('throwError')
+            ->withAnyParameters();
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
+        $this->assertFalse($delegate->run());
+    }
+
+    public function testIsOptionsValidPasses()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['validateOptions'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('validateOptions')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $generator = m::mock('Generators\Generator');
+        $args = [
+            'command'     => 'generate',
+            'entity'      => 'Order',
+            'what'        => 'model',
+            'config-file' => null,
+        ];
+
+        $this->genFactory
+            ->shouldReceive('make')
+            ->with($args['what'], $optionsReader)
+            ->andReturn($generator);
+
         $delegate = new GeneratorDelegate(
             $this->command,
             $this->config,
             $this->genFactory,
             $this->filesystem,
-            $this->args,
-            $this->optionReader
+            $args,
+            $optionsReader
         );
-        $this->assertFalse($delegate->run());
+
+        $result = $delegate->isOptionsValid();
+
+        $this->assertTrue($result);
     }
+
+    public function testIsOptionsValidFailed()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['validateOptions', 'getError'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('validateOptions')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $optionsReader->expects($this->any())
+            ->method('getError')
+            ->withAnyParameters();
+
+        $generator = m::mock('Generators\Generator');
+        $args = [
+            'command'     => 'generate',
+            'entity'      => 'Order',
+            'what'        => 'model',
+            'config-file' => null,
+        ];
+
+        $this->genFactory
+            ->shouldReceive('make')
+            ->with($args['what'], $optionsReader)
+            ->andReturn($generator);
+
+        $delegate = $this->getMock(
+            'Delegates\GeneratorDelegate',
+            ['throwError'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $args,
+                $optionsReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('throwError')
+            ->withAnyParameters();
+
+        $result = $delegate->isOptionsValid();
+
+        $this->assertFalse($result);
+    }
+
+    public function testIsFieldMapperDatabaseValidPasses()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['validateOptions', 'useFieldMapperDatabase'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('validateOptions')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $generator = m::mock('Generators\Generator');
+        $args = [
+            'command'     => 'generate',
+            'entity'      => 'Order',
+            'what'        => 'model',
+            'config-file' => null,
+        ];
+
+        $this->genFactory
+            ->shouldReceive('make')
+            ->with($args['what'], $optionsReader)
+            ->andReturn($generator);
+
+        $delegate = new GeneratorDelegate(
+            $this->command,
+            $this->config,
+            $this->genFactory,
+            $this->filesystem,
+            $args,
+            $optionsReader
+        );
+
+        $result = $delegate->isFieldMapperDatabaseValid();
+
+        $this->assertTrue($result);
+    }
+
+    public function testIsFieldMapperDatabaseValidWithModelPasses()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['validateOptions', 'useFieldMapperDatabase'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('validateOptions')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $configReader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['setUseFieldMapperDatabase', 'validateFieldMapperDatabase'],
+            [$fs]
+        );
+
+        $configReader->expects($this->any())
+            ->method('setUseFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $configReader->expects($this->any())
+            ->method('validateFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $generator = m::mock('Generators\Generator');
+        $args = [
+            'command'     => 'generate',
+            'entity'      => 'Order',
+            'what'        => 'model',
+            'config-file' => null,
+        ];
+
+        $this->genFactory
+            ->shouldReceive('make')
+            ->with($args['what'], $optionsReader)
+            ->andReturn($generator);
+
+        $delegate = new GeneratorDelegate(
+            $this->command,
+            $configReader,
+            $this->genFactory,
+            $this->filesystem,
+            $args,
+            $optionsReader
+        );
+
+        $result = $delegate->isFieldMapperDatabaseValid();
+
+        $this->assertTrue($result);
+    }
+
+    public function testIsFieldMapperDatabaseValidWithModelFails()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperDatabase'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $configReader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['setUseFieldMapperDatabase', 'validateFieldMapperDatabase'],
+            [$fs]
+        );
+
+        $configReader->expects($this->any())
+            ->method('setUseFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $configReader->expects($this->any())
+            ->method('validateFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $generator = m::mock('Generators\Generator');
+        $args = [
+            'command'     => 'generate',
+            'entity'      => 'Order',
+            'what'        => 'model',
+            'config-file' => null,
+        ];
+
+        $this->genFactory
+            ->shouldReceive('make')
+            ->with($args['what'], $optionsReader)
+            ->andReturn($generator);
+
+        $delegate = $this->getMock(
+            'Delegates\GeneratorDelegate',
+            ['throwError'],
+            [
+                $this->command,
+                $configReader,
+                $this->genFactory,
+                $this->filesystem,
+                $args,
+                $optionsReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('throwError')
+            ->withAnyParameters();
+
+        $result = $delegate->isFieldMapperDatabaseValid();
+
+        $this->assertFalse($result);
+    }
+
+    public function testIsFieldMapperModelValidPasses()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperModel'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperModel')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $generator = m::mock('Generators\Generator');
+        $args = [
+            'command'     => 'generate',
+            'entity'      => 'Order',
+            'what'        => 'model',
+            'config-file' => null,
+        ];
+
+        $this->genFactory
+            ->shouldReceive('make')
+            ->with($args['what'], $optionsReader)
+            ->andReturn($generator);
+
+        $delegate = new GeneratorDelegate(
+            $this->command,
+            $this->config,
+            $this->genFactory,
+            $this->filesystem,
+            $args,
+            $optionsReader
+        );
+
+        $result = $delegate->isFieldMapperModelValid();
+
+        $this->assertTrue($result);
+    }
+
+    public function testIsFieldMapperModelValidWithModelPasses()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperDatabase'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $configReader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['validateFieldMapperModel'],
+            [$fs]
+        );
+
+        $configReader->expects($this->any())
+            ->method('validateFieldMapperModel')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $generator = m::mock('Generators\Generator');
+        $args = [
+            'command'     => 'generate',
+            'entity'      => 'Order',
+            'what'        => 'model',
+            'config-file' => null,
+        ];
+
+        $this->genFactory
+            ->shouldReceive('make')
+            ->with($args['what'], $optionsReader)
+            ->andReturn($generator);
+
+        $delegate = new GeneratorDelegate(
+            $this->command,
+            $configReader,
+            $this->genFactory,
+            $this->filesystem,
+            $args,
+            $optionsReader
+        );
+
+        $result = $delegate->isFieldMapperModelValid();
+
+        $this->assertTrue($result);
+    }
+
+    public function testIsFieldMapperModelValidWithModelFails()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperModel'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperModel')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $configReader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['validateFieldMapperModel'],
+            [$fs]
+        );
+
+        $configReader->expects($this->any())
+            ->method('validateFieldMapperModel')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $configReader->expects($this->any())
+            ->method('validateFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $generator = m::mock('Generators\Generator');
+        $args = [
+            'command'     => 'generate',
+            'entity'      => 'Order',
+            'what'        => 'model',
+            'config-file' => null,
+        ];
+
+        $this->genFactory
+            ->shouldReceive('make')
+            ->with($args['what'], $optionsReader)
+            ->andReturn($generator);
+
+        $delegate = $this->getMock(
+            'Delegates\GeneratorDelegate',
+            ['throwError'],
+            [
+                $this->command,
+                $configReader,
+                $this->genFactory,
+                $this->filesystem,
+                $args,
+                $optionsReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('throwError')
+            ->withAnyParameters();
+
+        $result = $delegate->isFieldMapperModelValid();
+
+        $this->assertFalse($result);
+    }
+
 }

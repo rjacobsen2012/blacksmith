@@ -101,7 +101,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
     {
         //check if the loaded config is valid
         if (! $this->config->validateConfig()) {
-            $this->command->comment(
+            $this->throwError(
                 'Error',
                 'The loaded configuration file is invalid',
                 true
@@ -109,9 +109,12 @@ class GeneratorDelegate implements GeneratorDelegateInterface
             return false;
         }
 
+        //validate options used
+        $this->isOptionsValid();
+
         //check is the field mapper database is set and is valid
         if (! $this->isFieldMapperDatabaseValid()) {
-            $this->command->comment(
+            $this->throwError(
                 'Error',
                 $this->config->getError(),
                 true
@@ -121,7 +124,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
 
         //check is the field mapper model is set and is valid
         if (! $this->isFieldMapperModelValid()) {
-            $this->command->comment(
+            $this->throwError(
                 'Error',
                 $this->config->getError(),
                 true
@@ -136,13 +139,13 @@ class GeneratorDelegate implements GeneratorDelegateInterface
 
         //see if passed in command is one that is available
         if (! in_array($this->generation_request, $possible_generations)) {
-            $this->command->comment(
+            $this->throwError(
                 'Error',
                 "{$this->generation_request} is not a valid option",
                 true
             );
 
-            $this->command->comment(
+            $this->throwError(
                 'Error Details',
                 "Please choose from: ". implode(", ", $possible_generations),
                 true
@@ -169,7 +172,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
 
         if ($success) {
 
-            $this->command->comment(
+            $this->throwError(
                 'Blacksmith',
                 'Success, I generated the code for you in '. $this->generator->getTemplateDestination()
             );
@@ -177,7 +180,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
 
         } else {
 
-            $this->command->comment(
+            $this->throwError(
                 'Blacksmith',
                 'An unknown error occured, nothing was generated',
                 true
@@ -194,7 +197,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
     public function isOptionsValid()
     {
         if (! $this->optionReader->validateOptions()) {
-            $this->command->comment(
+            $this->throwError(
                 'Error',
                 $this->optionReader->getError(),
                 true
@@ -208,10 +211,11 @@ class GeneratorDelegate implements GeneratorDelegateInterface
     public function isFieldMapperDatabaseValid()
     {
         if ($this->optionReader->useFieldMapperDatabase()) {
+            $this->config->setUseFieldMapperDatabase(true);
             $mapper = $this->config->validateFieldMapperDatabase();
 
             if (! $mapper) {
-                $this->command->comment(
+                $this->throwError(
                     'Error',
                     $this->config->getError(),
                     true
@@ -232,7 +236,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
             $mapper = $this->config->validateFieldMapperModel($model);
 
             if (! $mapper) {
-                $this->command->comment(
+                $this->throwError(
                     'Error',
                     $this->config->getError(),
                     true
@@ -244,5 +248,20 @@ class GeneratorDelegate implements GeneratorDelegateInterface
         }
 
         return true;
+    }
+
+    /**
+     * Function to throw an error
+     *
+     * @param $error
+     * @param $message
+     */
+    public function throwError($heading, $message, $error = false)
+    {
+        $this->command->comment(
+            $heading,
+            $message,
+            $error
+        );
     }
 }

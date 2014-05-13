@@ -225,7 +225,7 @@ class ConfigReader implements ConfigReaderInterface
 
     }
 
-    public function setFieldMapper(\Mapper $mapper)
+    public function setFieldMapper($mapper)
     {
 
         $this->mapper = $mapper;
@@ -235,28 +235,43 @@ class ConfigReader implements ConfigReaderInterface
     public function getFieldMapper()
     {
 
+        if (! $this->mapper) {
+            $this->setFieldMapper(new \Mapper);
+        }
+
         return $this->mapper;
 
     }
 
-    public function useFieldMapperDatabase($use)
+    public function setUseFieldMapperDatabase($use)
     {
         $this->useFieldMapperDatabase = $use;
+    }
+
+    public function useFieldMapperDatabase()
+    {
+
+        return $this->useFieldMapperDatabase;
+
+    }
+
+    public function useDatabaseConfig()
+    {
+        return array_key_exists('database', $this->config);
     }
 
     public function validateFieldMapperDatabase()
     {
 
         if ($this->useFieldMapperDatabase) {
-            if (! array_key_exists('database', $this->config)) {
-                $this->error = "Database config is missing from the config file.";
+            if (! $this->useDatabaseConfig()) {
+                $this->setError("Database config is missing from the config file.");
                 return false;
             }
 
             $this->setDatabaseConfigReader(new DatabaseConfig($this->config['database']));
-            $this->setFieldMapper(new \Mapper());
 
-            $this->mapper->setDbConfig(
+            $this->getFieldMapper()->setDbConfig(
                 $this->databaseConfigReader->getDatabaseType(),
                 $this->databaseConfigReader->getDatabaseHost(),
                 $this->databaseConfigReader->getDatabaseUser(),
@@ -266,11 +281,11 @@ class ConfigReader implements ConfigReaderInterface
                 $this->databaseConfigReader->getDatabaseSocket()
             );
 
-            if (! $this->mapper->validateDbConnection()) {
-                $this->error = "The field mapper cannot connect to the database.";
+            if (! $this->getFieldMapper()->validateDbConnection()) {
+                $this->setError("The field mapper cannot connect to the database.");
                 return false;
             } else {
-                return $this->mapper;
+                return $this->getFieldMapper();
             }
 
         }
@@ -295,10 +310,10 @@ class ConfigReader implements ConfigReaderInterface
     public function loadAutoloader($autoloader)
     {
 
-        try {
+        if (file_exists($autoloader)) {
             require_once($autoloader);
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to load the autoloader [{$autoloader}]");
+        } else {
+            throw new \Exception("Failed to locate the autoloader [{$autoloader}]");
         }
 
     }
@@ -308,20 +323,18 @@ class ConfigReader implements ConfigReaderInterface
 
         if ($model) {
 
-            $this->setFieldMapper(new \Mapper());
-
             $autoloader = $this->findAutoLoader($model);
             $this->loadAutoloader("$autoloader/vendor/autoload.php");
 
-            if (!$this->mapper->validateModel($model)) {
+            if (!$this->getFieldMapper()->validateModel($model)) {
 
-                $this->error = "The model for the field mapper could not be loaded.";
+                $this->setError("The model for the field mapper could not be loaded.");
 
                 return false;
 
             } else {
 
-                return $this->mapper;
+                return $this->getFieldMapper();
 
             }
 
@@ -413,6 +426,11 @@ class ConfigReader implements ConfigReaderInterface
     public function getConfigDirectory()
     {
         return $this->configDir;
+    }
+
+    public function setError($error)
+    {
+        $this->error = $error;
     }
 
     public function getError()

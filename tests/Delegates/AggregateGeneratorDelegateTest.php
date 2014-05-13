@@ -93,14 +93,23 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
         $this->command->shouldReceive('comment')->once()
             ->with('Error Details', "Please choose from: ". implode(", ", array_keys($options)), true);
 
-        $delegate = new AggregateGeneratorDelegate(
-            $this->command,
-            $this->config,
-            $this->genFactory,
-            $this->filesystem,
-            $this->args,
-            $this->optionReader
+        $delegate = $this->getMock(
+            'Delegates\AggregateGeneratorDelegate',
+            ['isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
         );
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
         $this->assertFalse($delegate->run());
     }
 
@@ -156,14 +165,22 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
 
         }//end foreach
 
-        $delegate = new AggregateGeneratorDelegate(
-            $this->command,
-            $this->config,
-            $this->genFactory,
-            $this->filesystem,
-            $this->args,
-            $this->optionReader
+        $delegate = $this->getMock(
+            'Delegates\AggregateGeneratorDelegate',
+            ['isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
         );
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
 
         $this->assertTrue($delegate->run());
     }
@@ -234,14 +251,23 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
 
         }//end foreach
 
-        $delegate = new AggregateGeneratorDelegate(
-            $this->command,
-            $this->config,
-            $this->genFactory,
-            $this->filesystem,
-            $this->args,
-            $this->optionReader
+        $delegate = $this->getMock(
+            'Delegates\AggregateGeneratorDelegate',
+            ['isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
         );
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
         $this->assertTrue($delegate->run());
     }
 
@@ -298,17 +324,488 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
 
         }//end foreach
 
+        $delegate = $this->getMock(
+            'Delegates\AggregateGeneratorDelegate',
+            ['isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
+        $this->assertTrue($delegate->run());
+    }
+
+    public function testRunWithInvalidDatabaseArgumentsShouldFail()
+    {
+        //mock valid options
+        $options = $this->getValidOptions();
+        $cnt = count($options['scaffold']);
+
+        $this->config->shouldReceive('validateConfig')->once()
+            ->andReturn(true);
+
+        $this->config->shouldReceive('getError')->once();
+
+        $delegate = $this->getMock(
+            'Delegates\AggregateGeneratorDelegate',
+            ['isFieldMapperDatabaseValid', 'throwError', 'isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('isFieldMapperDatabaseValid')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $delegate->expects($this->any())
+            ->method('throwError')
+            ->withAnyParameters();
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
+        $result = $delegate->run();
+
+        $this->assertFalse($result);
+    }
+
+    public function testRunWithInvalidModelArgumentsShouldFail()
+    {
+        //mock valid options
+        $options = $this->getValidOptions();
+        $cnt = count($options['scaffold']);
+
+        $this->config->shouldReceive('validateConfig')->once()
+            ->andReturn(true);
+
+        $this->config->shouldReceive('getError')->once();
+
+        $delegate = $this->getMock(
+            'Delegates\AggregateGeneratorDelegate',
+            ['isFieldMapperModelValid', 'throwError', 'isOptionsValid'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $this->optionReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('isFieldMapperModelValid')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $delegate->expects($this->any())
+            ->method('throwError')
+            ->withAnyParameters();
+
+        $delegate->expects($this->any())
+            ->method('isOptionsValid')
+            ->withAnyParameters();
+
+        $result = $delegate->run();
+
+        $this->assertFalse($result);
+    }
+
+    public function testIsOptionsValidPasses()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['validateOptions'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('validateOptions')
+            ->withAnyParameters()
+            ->willReturn(true);
+
         $delegate = new AggregateGeneratorDelegate(
             $this->command,
             $this->config,
             $this->genFactory,
             $this->filesystem,
             $this->args,
-            $this->optionReader
+            $optionsReader
         );
-        $this->assertTrue($delegate->run());
+
+        $result = $delegate->isOptionsValid();
+
+        $this->assertTrue($result);
     }
 
+    public function testIsOptionsValidFails()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['validateOptions', 'getError'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('validateOptions')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $optionsReader->expects($this->any())
+            ->method('getError')
+            ->withAnyParameters()
+            ->willReturn('some error');
+
+        $delegate = $this->getMock(
+            'Delegates\AggregateGeneratorDelegate',
+            ['throwError'],
+            [
+                $this->command,
+                $this->config,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $optionsReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('throwError')
+            ->withAnyParameters();
+
+        $result = $delegate->isOptionsValid();
+
+        $this->assertFalse($result);
+    }
+
+    public function testIsFieldMapperDatabaseValidPasses()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperDatabase'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $delegate = new AggregateGeneratorDelegate(
+            $this->command,
+            $this->config,
+            $this->genFactory,
+            $this->filesystem,
+            $this->args,
+            $optionsReader
+        );
+
+        $result = $delegate->isFieldMapperDatabaseValid();
+
+        $this->assertTrue($result);
+    }
+
+    public function testIsFieldMapperDatabaseValidMapperPasses()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperDatabase'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $configReader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['setUseFieldMapperDatabase', 'validateFieldMapperDatabase'],
+            [$fs]
+        );
+
+        $configReader->expects($this->any())
+            ->method('setUseFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $configReader->expects($this->any())
+            ->method('validateFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $delegate = new AggregateGeneratorDelegate(
+            $this->command,
+            $configReader,
+            $this->genFactory,
+            $this->filesystem,
+            $this->args,
+            $optionsReader
+        );
+
+        $result = $delegate->isFieldMapperDatabaseValid();
+
+        $this->assertTrue($result);
+    }
+
+    public function testIsFieldMapperDatabaseValidMapperFails()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperDatabase'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $configReader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['setUseFieldMapperDatabase', 'validateFieldMapperDatabase'],
+            [$fs]
+        );
+
+        $configReader->expects($this->any())
+            ->method('setUseFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $configReader->expects($this->any())
+            ->method('validateFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $delegate = $this->getMock(
+            'Delegates\AggregateGeneratorDelegate',
+            ['throwError'],
+            [
+                $this->command,
+                $configReader,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $optionsReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('throwError')
+            ->withAnyParameters();
+
+        $result = $delegate->isFieldMapperDatabaseValid();
+
+        $this->assertFalse($result);
+    }
+
+    public function testIsFieldMapperModelValidPasses()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperModel'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperModel')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $delegate = new AggregateGeneratorDelegate(
+            $this->command,
+            $this->config,
+            $this->genFactory,
+            $this->filesystem,
+            $this->args,
+            $optionsReader
+        );
+
+        $result = $delegate->isFieldMapperModelValid();
+
+        $this->assertTrue($result);
+    }
+
+    public function testIsFieldMapperModelValidMapperPasses()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperDatabase'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperDatabase')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $configReader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['validateFieldMapperModel'],
+            [$fs]
+        );
+
+        $configReader->expects($this->any())
+            ->method('validateFieldMapperModel')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $delegate = new AggregateGeneratorDelegate(
+            $this->command,
+            $configReader,
+            $this->genFactory,
+            $this->filesystem,
+            $this->args,
+            $optionsReader
+        );
+
+        $result = $delegate->isFieldMapperModelValid();
+
+        $this->assertTrue($result);
+    }
+
+    public function testIsFieldMapperModelValidMapperFails()
+    {
+        $options = [
+            'f',
+            'architecture' => 'test',
+            'fields' => 'username:string:unique, age:integer:nullable'
+        ];
+
+        $optionsReader = $this->getMock(
+            'Console\OptionReader',
+            ['useFieldMapperModel'],
+            [$options]
+        );
+
+        $optionsReader->expects($this->any())
+            ->method('useFieldMapperModel')
+            ->withAnyParameters()
+            ->willReturn(true);
+
+        $path = realpath(__DIR__.'/../../src/lib/Generators/templates/hexagonal/config.json');
+
+        $json = file_get_contents($path);
+
+        $fs = m::mock('Illuminate\Filesystem\Filesystem');
+        $fs->shouldReceive('get')->once()->withAnyArgs()
+            ->andReturn($json);
+
+        $configReader = $this->getMock(
+            'Configuration\ConfigReader',
+            ['validateFieldMapperModel'],
+            [$fs]
+        );
+
+        $configReader->expects($this->any())
+            ->method('validateFieldMapperModel')
+            ->withAnyParameters()
+            ->willReturn(false);
+
+        $delegate = $this->getMock(
+            'Delegates\AggregateGeneratorDelegate',
+            ['throwError'],
+            [
+                $this->command,
+                $configReader,
+                $this->genFactory,
+                $this->filesystem,
+                $this->args,
+                $optionsReader
+            ]
+        );
+
+        $delegate->expects($this->any())
+            ->method('throwError')
+            ->withAnyParameters();
+
+        $result = $delegate->isFieldMapperModelValid();
+
+        $this->assertFalse($result);
+    }
 
     public function testUpdateRoutesFile()
     {
