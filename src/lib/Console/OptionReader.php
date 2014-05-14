@@ -17,6 +17,11 @@ class OptionReader
     protected $options;
 
     /**
+     * @var $error string
+     */
+    protected $error;
+
+    /**
      * @var resource
      */
     protected $model = null;
