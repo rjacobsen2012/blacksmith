@@ -519,9 +519,15 @@ class ConfigReaderTest extends \BlacksmithTest
 
         $reader->setUseFieldMapperDatabase(true);
 
-        $valid = $reader->validateFieldMapperDatabase();
+        $e = null;
 
-        $this->assertFalse($valid);
+        try {
+            $valid = $reader->validateFieldMapperDatabase();
+        } catch (\Exception $e) {
+
+        }
+
+        $this->assertTrue($e instanceof \Exception);
 
     }
 

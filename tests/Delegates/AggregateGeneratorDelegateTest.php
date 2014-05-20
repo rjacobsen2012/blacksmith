@@ -55,7 +55,7 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
         $this->config->shouldReceive('validateConfig')->once()
             ->andReturn(false);
 
-        $this->command->shouldReceive('comment')->once()
+        $this->command->shouldReceive('displayMessage')->once()
             ->with('Error', 'The loaded configuration file is invalid', true);
 
         $delegate = new AggregateGeneratorDelegate(
@@ -87,10 +87,10 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
         $this->config->shouldReceive('getAvailableAggregates')->once()
             ->andReturn(array_keys($options));
 
-        $this->command->shouldReceive('comment')->once()
+        $this->command->shouldReceive('displayMessage')->once()
             ->with('Error', "{$requested} is not a valid option", true);
 
-        $this->command->shouldReceive('comment')->once()
+        $this->command->shouldReceive('displayMessage')->once()
             ->with('Error Details', "Please choose from: ". implode(", ", array_keys($options)), true);
 
         $delegate = $this->getMock(
@@ -161,7 +161,7 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
             $this->generator->shouldReceive('getTemplateDestination')
                 ->andReturn($dest);
 
-            $this->command->shouldReceive('comment')->withAnyArgs();
+            $this->command->shouldReceive('displayMessage')->withAnyArgs();
 
         }//end foreach
 
@@ -247,7 +247,7 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
             $this->generator->shouldReceive('getTemplateDestination')
                 ->andReturn($dest);
 
-            $this->command->shouldReceive('comment')->withAnyArgs();
+            $this->command->shouldReceive('displayMessage')->withAnyArgs();
 
         }//end foreach
 
@@ -315,7 +315,7 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
                 ->withAnyArgs()->andReturn(false);
 
 
-            $this->command->shouldReceive('comment')
+            $this->command->shouldReceive('displayMessage')
                 ->with(
                     "Blacksmith",
                     "An unknown error occurred, nothing was generated for {$to_generate}",
@@ -355,9 +355,12 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
 
         $this->config->shouldReceive('getError')->once();
 
+        $this->command->shouldReceive('displayMessage')->once()
+            ->withAnyArgs();
+
         $delegate = $this->getMock(
             'Delegates\AggregateGeneratorDelegate',
-            ['isFieldMapperDatabaseValid', 'throwError', 'isOptionsValid'],
+            ['isFieldMapperDatabaseValid', 'isOptionsValid'],
             [
                 $this->command,
                 $this->config,
@@ -372,10 +375,6 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
             ->method('isFieldMapperDatabaseValid')
             ->withAnyParameters()
             ->willReturn(false);
-
-        $delegate->expects($this->any())
-            ->method('throwError')
-            ->withAnyParameters();
 
         $delegate->expects($this->any())
             ->method('isOptionsValid')
@@ -397,9 +396,12 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
 
         $this->config->shouldReceive('getError')->once();
 
+        $this->command->shouldReceive('displayMessage')->once()
+            ->withAnyArgs();
+
         $delegate = $this->getMock(
             'Delegates\AggregateGeneratorDelegate',
-            ['isFieldMapperModelValid', 'throwError', 'isOptionsValid'],
+            ['isFieldMapperModelValid', 'isOptionsValid'],
             [
                 $this->command,
                 $this->config,
@@ -414,10 +416,6 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
             ->method('isFieldMapperModelValid')
             ->withAnyParameters()
             ->willReturn(false);
-
-        $delegate->expects($this->any())
-            ->method('throwError')
-            ->withAnyParameters();
 
         $delegate->expects($this->any())
             ->method('isOptionsValid')
@@ -485,22 +483,17 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
             ->withAnyParameters()
             ->willReturn('some error');
 
-        $delegate = $this->getMock(
-            'Delegates\AggregateGeneratorDelegate',
-            ['throwError'],
-            [
-                $this->command,
-                $this->config,
-                $this->genFactory,
-                $this->filesystem,
-                $this->args,
-                $optionsReader
-            ]
-        );
+        $this->command->shouldReceive('displayMessage')->once()
+            ->withAnyArgs();
 
-        $delegate->expects($this->any())
-            ->method('throwError')
-            ->withAnyParameters();
+        $delegate = new AggregateGeneratorDelegate(
+            $this->command,
+            $this->config,
+            $this->genFactory,
+            $this->filesystem,
+            $this->args,
+            $optionsReader
+        );
 
         $result = $delegate->isOptionsValid();
 
@@ -640,22 +633,17 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
             ->withAnyParameters()
             ->willReturn(false);
 
-        $delegate = $this->getMock(
-            'Delegates\AggregateGeneratorDelegate',
-            ['throwError'],
-            [
-                $this->command,
-                $configReader,
-                $this->genFactory,
-                $this->filesystem,
-                $this->args,
-                $optionsReader
-            ]
-        );
+        $this->command->shouldReceive('displayMessage')->once()
+            ->withAnyArgs();
 
-        $delegate->expects($this->any())
-            ->method('throwError')
-            ->withAnyParameters();
+        $delegate = new AggregateGeneratorDelegate(
+            $this->command,
+            $configReader,
+            $this->genFactory,
+            $this->filesystem,
+            $this->args,
+            $optionsReader
+        );
 
         $result = $delegate->isFieldMapperDatabaseValid();
 
@@ -785,22 +773,17 @@ class AggregateGeneratorDelegateTest extends \BlacksmithTest
             ->withAnyParameters()
             ->willReturn(false);
 
-        $delegate = $this->getMock(
-            'Delegates\AggregateGeneratorDelegate',
-            ['throwError'],
-            [
-                $this->command,
-                $configReader,
-                $this->genFactory,
-                $this->filesystem,
-                $this->args,
-                $optionsReader
-            ]
-        );
+        $this->command->shouldReceive('displayMessage')->once()
+            ->withAnyArgs();
 
-        $delegate->expects($this->any())
-            ->method('throwError')
-            ->withAnyParameters();
+        $delegate = new AggregateGeneratorDelegate(
+            $this->command,
+            $configReader,
+            $this->genFactory,
+            $this->filesystem,
+            $this->args,
+            $optionsReader
+        );
 
         $result = $delegate->isFieldMapperModelValid();
 

@@ -101,7 +101,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
     {
         //check if the loaded config is valid
         if (! $this->config->validateConfig()) {
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error',
                 'The loaded configuration file is invalid',
                 true
@@ -114,7 +114,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
 
         //check is the field mapper database is set and is valid
         if (! $this->isFieldMapperDatabaseValid()) {
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error',
                 $this->config->getError(),
                 true
@@ -124,7 +124,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
 
         //check is the field mapper model is set and is valid
         if (! $this->isFieldMapperModelValid()) {
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error',
                 $this->config->getError(),
                 true
@@ -139,13 +139,13 @@ class GeneratorDelegate implements GeneratorDelegateInterface
 
         //see if passed in command is one that is available
         if (! in_array($this->generation_request, $possible_generations)) {
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error',
                 "{$this->generation_request} is not a valid option",
                 true
             );
 
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error Details',
                 "Please choose from: ". implode(", ", $possible_generations),
                 true
@@ -172,7 +172,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
 
         if ($success) {
 
-            $this->throwError(
+            $this->command->displayMessage(
                 'Blacksmith',
                 'Success, I generated the code for you in '. $this->generator->getTemplateDestination()
             );
@@ -180,7 +180,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
 
         } else {
 
-            $this->throwError(
+            $this->command->displayMessage(
                 'Blacksmith',
                 'An unknown error occured, nothing was generated',
                 true
@@ -197,7 +197,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
     public function isOptionsValid()
     {
         if (! $this->optionReader->validateOptions()) {
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error',
                 $this->optionReader->getError(),
                 true
@@ -215,7 +215,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
             $mapper = $this->config->validateFieldMapperDatabase();
 
             if (! $mapper) {
-                $this->throwError(
+                $this->command->displayMessage(
                     'Error',
                     $this->config->getError(),
                     true
@@ -236,7 +236,7 @@ class GeneratorDelegate implements GeneratorDelegateInterface
             $mapper = $this->config->validateFieldMapperModel($model);
 
             if (! $mapper) {
-                $this->throwError(
+                $this->command->displayMessage(
                     'Error',
                     $this->config->getError(),
                     true
@@ -250,18 +250,4 @@ class GeneratorDelegate implements GeneratorDelegateInterface
         return true;
     }
 
-    /**
-     * Function to throw an error
-     *
-     * @param $error
-     * @param $message
-     */
-    public function throwError($heading, $message, $error = false)
-    {
-        $this->command->comment(
-            $heading,
-            $message,
-            $error
-        );
-    }
 }

@@ -128,4 +128,20 @@ trait Command {
 
         return $this->getHelperSet()->get('dialog')->askHiddenResponse($this->output, $question, false);
     }
+
+    /**
+     * Function to throw an error
+     *
+     * @param $heading
+     * @param $message
+     * @param $error
+     */
+    public function displayMessage($heading, $message, $error = false)
+    {
+        $this->comment(
+            $heading,
+            $message,
+            $error
+        );
+    }
 }

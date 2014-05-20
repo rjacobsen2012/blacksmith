@@ -282,8 +282,7 @@ class ConfigReader implements ConfigReaderInterface
             );
 
             if (! $this->getFieldMapper()->validateDbConnection()) {
-                $this->setError("The field mapper cannot connect to the database.");
-                return false;
+                throw new \Exception("The field mapper cannot connect to the database.");
             } else {
                 return $this->getFieldMapper();
             }

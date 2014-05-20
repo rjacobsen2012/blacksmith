@@ -128,21 +128,15 @@ class OptionReader
 
             if ($this->useFieldMapperDatabase() && $this->useFieldMapperModel()) {
 
-                $this->error = "You cannot specify --fields, --database, and --model. Please use just one.";
-
-                return false;
+                throw new \Exception("You cannot specify --fields, --database, and --model. Please use just one.");
 
             } elseif ($this->useFieldMapperModel()) {
 
-                $this->error = "You cannot specify both --fields and --model. Please use one or the other.";
-
-                return false;
+                throw new \Exception("You cannot specify both --fields and --model. Please use one or the other.");
 
             } elseif ($this->useFieldMapperDatabase()) {
 
-                $this->error = "You cannot specify both --fields and --database. Please use one or the other.";
-
-                return false;
+                throw new \Exception("You cannot specify both --fields and --database. Please use one or the other.");
 
             }
 

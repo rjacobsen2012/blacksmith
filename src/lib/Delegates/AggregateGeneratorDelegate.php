@@ -108,7 +108,7 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
     {
         //check if the loaded config is valid
         if (! $this->config->validateConfig()) {
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error',
                 'The loaded configuration file is invalid',
                 true
@@ -121,7 +121,7 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
 
         //check is the field mapper database is set and is valid
         if (! $this->isFieldMapperDatabaseValid()) {
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error',
                 $this->config->getError(),
                 true
@@ -131,7 +131,7 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
 
         //check is the field mapper model is set and is valid
         if (! $this->isFieldMapperModelValid()) {
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error',
                 $this->config->getError(),
                 true
@@ -144,13 +144,13 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
 
         //see if passed in command is one that is available
         if (! in_array($this->generation_request, $possible_aggregates)) {
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error',
                 "{$this->generation_request} is not a valid option",
                 true
             );
 
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error Details',
                 "Please choose from: ". implode(", ", $possible_aggregates),
                 true
@@ -166,7 +166,7 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
             //get the settings, options etc.
             $settings  = $this->config->getConfigValue($to_generate);
             if ($settings === false) {
-                $this->throwError(
+                $this->command->displayMessage(
                     'Blacksmith',
                     'I skipped "'.$to_generate.'"'
                 );
@@ -193,14 +193,14 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
 
             if ($success) {
 
-                $this->throwError(
+                $this->command->displayMessage(
                     'Blacksmith',
                     'Success, I generated the code for you in '. $generator->getTemplateDestination()
                 );
 
             } else {
 
-                $this->throwError(
+                $this->command->displayMessage(
                     'Blacksmith',
                     "An unknown error occurred, nothing was generated for {$to_generate}",
                     true
@@ -218,21 +218,6 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
     }//end run function
 
     /**
-     * Function to throw an error
-     *
-     * @param $error
-     * @param $message
-     */
-    public function throwError($heading, $message, $error = false)
-    {
-        $this->command->comment(
-            $heading,
-            $message,
-            $error
-        );
-    }
-
-    /**
      * Calls the options validator
      *
      * @return bool
@@ -240,7 +225,7 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
     public function isOptionsValid()
     {
         if (! $this->optionReader->validateOptions()) {
-            $this->throwError(
+            $this->command->displayMessage(
                 'Error',
                 $this->optionReader->getError(),
                 true
@@ -258,7 +243,7 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
             $mapper = $this->config->validateFieldMapperDatabase();
 
             if (! $mapper) {
-                $this->throwError(
+                $this->command->displayMessage(
                     'Error',
                     $this->config->getError(),
                     true
@@ -281,7 +266,7 @@ class AggregateGeneratorDelegate implements GeneratorDelegateInterface
             $mapper = $this->config->validateFieldMapperModel($model);
 
             if (! $mapper) {
-                $this->throwError(
+                $this->command->displayMessage(
                     'Error',
                     $this->config->getError(),
                     true

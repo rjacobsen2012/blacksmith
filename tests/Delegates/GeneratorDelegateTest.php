@@ -57,7 +57,7 @@ class GeneratorDelegateTest extends \BlacksmithTest
             ->andReturn(false);
 
 
-        $this->command->shouldReceive('comment')->once()
+        $this->command->shouldReceive('displayMessage')->once()
             ->with('Error', 'The loaded configuration file is invalid', true);
 
         $delegate = $this->getMock(
@@ -108,10 +108,10 @@ class GeneratorDelegateTest extends \BlacksmithTest
             ->andReturn(null);
 
 
-        $this->command->shouldReceive('comment')->once()
+        $this->command->shouldReceive('displayMessage')->once()
             ->with('Error', "{$requested} is not a valid option", true);
 
-        $this->command->shouldReceive('comment')->once()
+        $this->command->shouldReceive('displayMessage')->once()
             ->with('Error Details', "Please choose from: ". implode(", ", $options), true);
 
         $delegate = $this->getMock(
@@ -185,8 +185,7 @@ class GeneratorDelegateTest extends \BlacksmithTest
         $this->generator->shouldReceive('getTemplateDestination')->once()
             ->andReturn($dest);
 
-        $this->command->shouldReceive('comment')->once()
-            ->with('Blacksmith', "Success, I generated the code for you in {$dest}", false);
+        $this->command->shouldReceive('displayMessage')->withAnyArgs();
 
         $delegate = $this->getMock(
             'Delegates\GeneratorDelegate',
@@ -253,7 +252,7 @@ class GeneratorDelegateTest extends \BlacksmithTest
                 null
             )->andReturn(false);
 
-        $this->command->shouldReceive('comment')->once()
+        $this->command->shouldReceive('displayMessage')->once()
             ->with('Blacksmith', "An unknown error occured, nothing was generated", true);
 
         $delegate = $this->getMock(
@@ -288,9 +287,11 @@ class GeneratorDelegateTest extends \BlacksmithTest
             ->withAnyArgs()
             ->andReturn('some error');
 
+        $this->command->shouldReceive('displayMessage')->once()->withAnyArgs();
+
         $delegate = $this->getMock(
             'Delegates\GeneratorDelegate',
-            ['isFieldMapperDatabaseValid', 'throwError', 'isOptionsValid'],
+            ['isFieldMapperDatabaseValid', 'isOptionsValid'],
             [
                 $this->command,
                 $this->config,
@@ -305,10 +306,6 @@ class GeneratorDelegateTest extends \BlacksmithTest
             ->method('isFieldMapperDatabaseValid')
             ->withAnyParameters()
             ->willReturn(false);
-
-        $delegate->expects($this->any())
-            ->method('throwError')
-            ->withAnyParameters();
 
         $delegate->expects($this->any())
             ->method('isOptionsValid')
@@ -332,9 +329,11 @@ class GeneratorDelegateTest extends \BlacksmithTest
         $this->optionReader->shouldReceive('useFieldMapperDatabase')->once()
             ->andReturn(false);
 
+        $this->command->shouldReceive('displayMessage')->once()->withAnyArgs();
+
         $delegate = $this->getMock(
             'Delegates\GeneratorDelegate',
-            ['isFieldMapperModelValid', 'throwError', 'isOptionsValid'],
+            ['isFieldMapperModelValid', 'isOptionsValid'],
             [
                 $this->command,
                 $this->config,
@@ -349,10 +348,6 @@ class GeneratorDelegateTest extends \BlacksmithTest
             ->method('isFieldMapperModelValid')
             ->withAnyParameters()
             ->willReturn(false);
-
-        $delegate->expects($this->any())
-            ->method('throwError')
-            ->withAnyParameters();
 
         $delegate->expects($this->any())
             ->method('isOptionsValid')
@@ -438,27 +433,21 @@ class GeneratorDelegateTest extends \BlacksmithTest
             'config-file' => null,
         ];
 
+        $this->command->shouldReceive('displayMessage')->once()->withAnyArgs();
+
         $this->genFactory
             ->shouldReceive('make')
             ->with($args['what'], $optionsReader)
             ->andReturn($generator);
 
-        $delegate = $this->getMock(
-            'Delegates\GeneratorDelegate',
-            ['throwError'],
-            [
-                $this->command,
-                $this->config,
-                $this->genFactory,
-                $this->filesystem,
-                $args,
-                $optionsReader
-            ]
+        $delegate = new GeneratorDelegate(
+            $this->command,
+            $this->config,
+            $this->genFactory,
+            $this->filesystem,
+            $this->args,
+            $optionsReader
         );
-
-        $delegate->expects($this->any())
-            ->method('throwError')
-            ->withAnyParameters();
 
         $result = $delegate->isOptionsValid();
 
@@ -647,22 +636,16 @@ class GeneratorDelegateTest extends \BlacksmithTest
             ->with($args['what'], $optionsReader)
             ->andReturn($generator);
 
-        $delegate = $this->getMock(
-            'Delegates\GeneratorDelegate',
-            ['throwError'],
-            [
-                $this->command,
-                $configReader,
-                $this->genFactory,
-                $this->filesystem,
-                $args,
-                $optionsReader
-            ]
-        );
+        $this->command->shouldReceive('displayMessage')->once()->withAnyArgs();
 
-        $delegate->expects($this->any())
-            ->method('throwError')
-            ->withAnyParameters();
+        $delegate = new GeneratorDelegate(
+            $this->command,
+            $configReader,
+            $this->genFactory,
+            $this->filesystem,
+            $this->args,
+            $optionsReader
+        );
 
         $result = $delegate->isFieldMapperDatabaseValid();
 
@@ -836,22 +819,16 @@ class GeneratorDelegateTest extends \BlacksmithTest
             ->with($args['what'], $optionsReader)
             ->andReturn($generator);
 
-        $delegate = $this->getMock(
-            'Delegates\GeneratorDelegate',
-            ['throwError'],
-            [
-                $this->command,
-                $configReader,
-                $this->genFactory,
-                $this->filesystem,
-                $args,
-                $optionsReader
-            ]
-        );
+        $this->command->shouldReceive('displayMessage')->once()->withAnyArgs();
 
-        $delegate->expects($this->any())
-            ->method('throwError')
-            ->withAnyParameters();
+        $delegate = new GeneratorDelegate(
+            $this->command,
+            $configReader,
+            $this->genFactory,
+            $this->filesystem,
+            $args,
+            $optionsReader
+        );
 
         $result = $delegate->isFieldMapperModelValid();
 
